@@ -1,33 +1,38 @@
 package com.rvcode.Application.ManagementApp.services;
 
+
 import com.rvcode.Application.ManagementApp.entities.Applicant;
+import com.rvcode.Application.ManagementApp.entities.Application;
+import com.rvcode.Application.ManagementApp.exceptionHandller.ApplicantNotFoundException;
 import com.rvcode.Application.ManagementApp.repositories.ApplicationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ApplicationService {
 
-    @Autowired
-    private ApplicationRepository repository;
+    private final ApplicationRepository applicationRepository;
+    private final ApplicantService applicantService;
 
-    public List<Applicant> getAllApplicant(){
-        try {
-            return repository.findAll();
-        }catch (Exception e){
-            throw new RuntimeException("User Not FOUND",e);
-        }
-
+    public ApplicationService(ApplicationRepository applicationRepository, ApplicantService applicantService) {
+        this.applicationRepository = applicationRepository;
+        this.applicantService = applicantService;
     }
 
-    public Applicant saveApplicant(Applicant applicant){
+    public Application saveApplication(Long applicantId,Application application){
         try {
-            return repository.save(applicant);
-        }catch (Exception e){
-            throw new RuntimeException("Internal Server error",e);
-        }
+            Optional<Applicant> optionalApplicant =  applicantService.findById(applicantId);
+            if(optionalApplicant.isEmpty()){
+                throw new ApplicantNotFoundException("Applicant not Found id is : "+ applicantId);
+            }
 
+            Applicant applicant = optionalApplicant.get();
+            application.setApplicant(applicant);
+
+            return applicationRepository.save(application);
+        }catch (Exception e){
+            throw new ApplicantNotFoundException("Error in  saving application");
+        }
     }
 }
